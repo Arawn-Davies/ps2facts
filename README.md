@@ -96,6 +96,17 @@ PS2FACTS_IMAGE=my/ps2dev:tag ./build.sh      # or your own image
 make                                         # or directly, with PS2SDK set
 ```
 
+Two ELFs come out:
+
+| File | Size | For |
+|---|---|---|
+| `ps2facts.elf` | ~1.3 MB | has symbols — use it for `nm`/`addr2line` when something faults |
+| `ps2facts-small.elf` | ~180 KB | stripped — put this on a memory card |
+
+Same program either way; the small one is stripped from the large one so they
+cannot drift. A memory card is 8 MB and shared with saves, so the size matters
+there.
+
 ## Notes for anyone reading the source
 
 Three things about a PS2 make a tool like this trickier than it looks, and all
