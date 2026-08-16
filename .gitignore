@@ -1,0 +1,9 @@
+# Build output. Everything here is reproducible from source.
+*.o
+*.a
+*.elf
+
+# Reports and dumps the tool itself writes, if run from this directory.
+ps2facts-*.txt
+rom0.bin
+nvm.bin
