@@ -8,6 +8,10 @@ It exists because working out *why* two PS2s behave differently usually means
 inferring hardware facts from symptoms. This asks the hardware directly, so
 two consoles can be diffed as text rather than remembered.
 
+`screentest/` is a second, much smaller tool in the same spirit: it measures
+how much of the debug screen a television actually shows, rather than leaving
+you to count rows off a photograph. See [screentest](#screentest).
+
 ## What it reports
 
 ```
@@ -96,16 +100,53 @@ PS2FACTS_IMAGE=my/ps2dev:tag ./build.sh      # or your own image
 make                                         # or directly, with PS2SDK set
 ```
 
-Two ELFs come out:
+Three ELFs come out:
 
 | File | Size | For |
 |---|---|---|
 | `ps2facts.elf` | ~1.3 MB | has symbols — use it for `nm`/`addr2line` when something faults |
 | `ps2facts-small.elf` | ~180 KB | stripped — put this on a memory card |
+| `screentest/screentest.elf` | ~1.2 MB | the screen ruler, below |
 
-Same program either way; the small one is stripped from the large one so they
-cannot drift. A memory card is 8 MB and shared with saves, so the size matters
-there.
+The first two are the same program; the small one is stripped from the large
+one so they cannot drift. A memory card is 8 MB and shared with saves, so the
+size matters there.
+
+`make` on its own builds only ps2facts. `screentest` has its own Makefile
+because ps2sdk's `Makefile.eeglobal` is built around one `EE_BIN` per
+directory; `build.sh` builds both.
+
+## screentest
+
+A second, much smaller program that answers one question: how much of the
+ps2sdk debug screen a television actually shows.
+
+It writes each row's own number into all 40 rows and a column ruler across
+three of them, then stops. Whichever numbers you can read are the rows that
+exist; the ruler gives the columns. No inference, no guessing from a
+photograph.
+
+```sh
+ps2client -h <console-ip> execee host:screentest.elf
+```
+
+It exists because the figure had been guessed three times — 28 rows, then 26,
+then 21 — each time off a photo, and ps2facts kept losing output off the bottom
+of the screen as a result. Measured, it is **28 rows by 80 columns**: rows 00
+to 27.
+
+That matters more than it sounds. The library's own `MY` is 40
+(`ee/debug/src/scr_printf.c`), and it will happily accept `scr_setXY(0, 35)`
+and draw there. Rows 28–39 land outside the visible area, and row 40 wraps
+back to row 0 — so a program that prints 30 lines silently overwrites its own
+first two, and looks like it never printed them. The visible height is set by
+the `SCISSOR_1` values in the library's setup template (`0,639,0,223`), not by
+`MX`/`MY`, and the library's hardcoded `DY = 50` display offset is an NTSC
+figure.
+
+Any program using `scr_printf` on a real television is subject to this, which
+is why the tool lives here rather than in whatever project last tripped over
+it.
 
 ## Notes for anyone reading the source
 
@@ -122,6 +163,7 @@ three cost real debugging time here:
 - **The debug screen is 28 rows by 80 columns**, though the library's own
   `MY` is 40. Rows 28–39 are drawn outside the visible area and row 40 wraps
   to row 0, so output longer than 28 rows silently overwrites its own start.
+  This is measured, not assumed — `screentest/` is the ruler that measured it.
 
 Reading the DEV9 revision register is done on a phat only. On a slim PSTwo that
 read hangs the console outright, and a slim has the adapter built in anyway, so
