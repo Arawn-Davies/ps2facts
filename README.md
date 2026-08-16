@@ -40,6 +40,29 @@ interrupt relay did that console pick?" from a guess into a fact. **If those
 rules change upstream, this row can drift** — it is a prediction, not a
 reading.
 
+## Should you use PS2Ident instead?
+
+For identifying a console, **probably yes**.
+[PS2Ident](https://github.com/ps2homebrew/PS2Ident) reads far more than this
+does — EE, FPU, IOP, GS, SPU2 and SSBUS revisions, MECHACON firmware and
+region, mainboard Model ID / EMCS ID / renewal date, i.Link and EEPROM config —
+and it has a community database of mainboard models behind it. It dumps both
+ROM chips and the MECHACON NVRAM too.
+
+ps2facts is not trying to replace it. It is a loader-debugging aid that
+happens to identify the console, and it keeps three properties PS2Ident does
+not aim for:
+
+- **the `selects` row** — what a PS2 Linux loader would choose on this console,
+  which is the question it was written to answer
+- **headless over ps2link** — `ps2client execee host:ps2facts.elf` prints the
+  whole report as text you can capture and diff, and `--dump` needs no pad
+- **loads no IOP modules and never resets the IOP** — so it runs on a console
+  that is already misbehaving, without disturbing whatever launched it
+
+Use PS2Ident to find out what your console is. Use this when you need to know
+what a loader will do with it.
+
 ## Usage
 
 Run it from wLaunchELF/uLaunchELF, or over the network with ps2link:
